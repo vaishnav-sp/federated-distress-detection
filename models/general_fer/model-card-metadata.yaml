@@ -1,0 +1,30 @@
+datasets:
+- msambare/fer2013
+language:
+- no-language
+library_name: keras
+license: apache-2.0
+metrics:
+- accuracy
+- f1
+model-index:
+- name: Emotion Recognition with MobileNetV2 (FER2013)
+  results:
+  - dataset:
+      name: FER2013
+      type: msambare/fer2013
+    metrics:
+    - type: accuracy
+      value: 0.52
+    - type: f1
+      value: 0.48
+    task:
+      name: Image Classification
+      type: image-classification
+tags:
+- emotion-recognition
+- image-classification
+- keras
+- mobilenetv2
+- fer2013
+- fine-tuning
