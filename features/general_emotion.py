@@ -53,3 +53,7 @@ class GeneralEmotionExtractor:
         )[0]
 
         return probabilities
+
+
+    def close(self):
+        pass

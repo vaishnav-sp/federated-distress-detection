@@ -1,139 +1,136 @@
-import cv2
 import numpy as np
-
-from features.emotion import EmotionFeatureExtractor
-from features.general_emotion import GeneralEmotionExtractor
-from features.behavioral import BehavioralFeatureExtractor
 
 
 class FusedFeatureExtractor:
 
-    def __init__(
-        self,
-        autism_model_path="emotion_model.pth",
-        general_model_path="models/general_fer/model.h5",
-        landmark_model_path="models/face_landmarker.task"
-    ):
+    def __init__(self):
+
+        from features.emotion import EmotionFeatureExtractor
+        from features.general_emotion import GeneralEmotionExtractor
+        from features.behavioral import BehavioralFeatureExtractor
+
+        # ==========================================
+        # Autism-specific emotion model
+        # ==========================================
 
         self.autism_emotion = EmotionFeatureExtractor(
-            autism_model_path
+            model_path="models/emotion_model.pth"
         )
+
+        # ==========================================
+        # General FER emotion model
+        #
+        # IMPORTANT:
+        # Use GeneralEmotionExtractor here.
+        # It contains the correct MobileNetV2
+        # preprocessing for the FER model.
+        # ==========================================
 
         self.general_emotion = GeneralEmotionExtractor(
-            general_model_path
+            model_path="models/general_fer/model.h5"
         )
 
-        self.behavioral = BehavioralFeatureExtractor(
-            landmark_model_path
-        )
+        # ==========================================
+        # Behavioral feature extractor
+        # ==========================================
 
-    def get_face_crop(self, frame, landmarks):
+        self.behavioral = BehavioralFeatureExtractor()
 
-        h, w, _ = frame.shape
-
-        xs = [p.x for p in landmarks]
-        ys = [p.y for p in landmarks]
-
-        x1 = max(0, int(min(xs) * w) - 20)
-        y1 = max(0, int(min(ys) * h) - 20)
-
-        x2 = min(w, int(max(xs) * w) + 20)
-        y2 = min(h, int(max(ys) * h) + 20)
-
-        face = frame[y1:y2, x1:x2]
-
-        return face
 
     def extract(self, frame, timestamp_ms):
 
-        # --------------------------------
-        # Detect face using our existing
-        # MediaPipe Face Landmarker
-        # --------------------------------
+        # ==========================================
+        # 1. Autism emotion features
+        # ==========================================
 
-        rgb = cv2.cvtColor(
+        autism_features = self.autism_emotion.extract(
+            frame
+        )
+
+        autism = np.asarray(
+            autism_features,
+            dtype=np.float32
+        )
+
+
+        # ==========================================
+        # 2. General emotion features
+        # ==========================================
+
+        general_features = self.general_emotion.extract(
+            frame
+        )
+
+        general = np.asarray(
+            general_features,
+            dtype=np.float32
+        )
+
+
+        # ==========================================
+        # 3. Behavioral features
+        # ==========================================
+
+        behavioral = self.behavioral.extract(
             frame,
-            cv2.COLOR_BGR2RGB
-        )
-
-        mp_image = __import__("mediapipe").Image(
-            image_format=__import__("mediapipe").ImageFormat.SRGB,
-            data=rgb
-        )
-
-        result = self.behavioral.detector.detect_for_video(
-            mp_image,
             timestamp_ms
         )
 
-        # --------------------------------
-        # No face detected
-        # --------------------------------
 
-        if not result.face_landmarks:
+        # ==========================================
+        # Current behavioral features
+        # ==========================================
 
-            self.behavioral.previous_landmarks = None
-
-            return None
-
-        landmarks = result.face_landmarks[0]
-
-        face = self.get_face_crop(
-            frame,
-            landmarks
-        )
-
-        if face.size == 0:
-
-            return None
-
-        # --------------------------------
-        # Autism-specific emotion
-        # --------------------------------
-
-        autism_probs = self.autism_emotion.extract(
-            face
-        )
-
-        # --------------------------------
-        # General FER
-        # --------------------------------
-
-        general_probs = self.general_emotion.extract(
-            face
-        )
-
-        # --------------------------------
-        # Behavioral features
-        #
-        # We already detected the face above.
-        # Now calculate behavioral features
-        # from the same landmarks.
-        # --------------------------------
-
-        behavior = self.behavioral.extract_from_landmarks(
-            landmarks
-        )
-
-        behavioral_features = np.array([
-            behavior["movement"],
-            behavior["head_movement"],
-            behavior["eye_openness"],
-            behavior["mouth_openness"]
+        behavior_current = np.array([
+            behavioral["movement"],
+            behavioral["head_movement"],
+            behavioral["eye_openness"],
+            behavioral["mouth_openness"]
         ], dtype=np.float32)
 
-        # --------------------------------
-        # Feature fusion
-        # --------------------------------
 
-        fused = np.concatenate([
-            autism_probs,
-            general_probs,
-            behavioral_features
+        # ==========================================
+        # Temporal behavioral features
+        # ==========================================
+
+        behavior_temporal = np.array([
+            behavioral["movement_mean"],
+            behavioral["movement_std"],
+            behavioral["movement_peak"],
+            behavioral["movement_activity"],
+
+            behavioral["head_mean"],
+            behavioral["head_std"],
+            behavioral["head_peak"]
+        ], dtype=np.float32)
+
+
+        # ==========================================
+        # Final feature vector
+        #
+        # 6  autism emotion
+        # 7  general emotion
+        # 4  current behavior
+        # 7  temporal behavior
+        #
+        # TOTAL = 24
+        # ==========================================
+
+        features = np.concatenate([
+            autism,
+            general,
+            behavior_current,
+            behavior_temporal
         ])
 
-        return fused
+
+        return features.astype(
+            np.float32
+        )
+
 
     def close(self):
 
+        self.autism_emotion.close()
+        self.general_emotion.close()
         self.behavioral.close()
