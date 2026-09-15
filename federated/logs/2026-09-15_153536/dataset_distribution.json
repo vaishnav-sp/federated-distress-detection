@@ -1,0 +1,15 @@
+{
+    "total_samples": 1199,
+    "binary_distribution": {
+        "NORMAL": 600,
+        "DISTRESS": 599
+    },
+    "original_distribution": {
+        "joy": 200,
+        "Natural": 200,
+        "surprise": 200,
+        "anger": 200,
+        "fear": 200,
+        "sadness": 199
+    }
+}

@@ -1,0 +1,42 @@
+[
+    {
+        "round": 1,
+        "clients": 3,
+        "metrics": {
+            "train_loss": 0.5810773148946309,
+            "train_accuracy": 0.7097581317764804
+        }
+    },
+    {
+        "round": 2,
+        "clients": 3,
+        "metrics": {
+            "train_loss": 0.48049563564689485,
+            "train_accuracy": 0.8140116763969975
+        }
+    },
+    {
+        "round": 3,
+        "clients": 3,
+        "metrics": {
+            "train_loss": 0.38766199283245906,
+            "train_accuracy": 0.8607172643869891
+        }
+    },
+    {
+        "round": 4,
+        "clients": 3,
+        "metrics": {
+            "train_loss": 0.31010655411289967,
+            "train_accuracy": 0.8974145120934112
+        }
+    },
+    {
+        "round": 5,
+        "clients": 3,
+        "metrics": {
+            "train_loss": 0.237621595391738,
+            "train_accuracy": 0.9366138448707256
+        }
+    }
+]

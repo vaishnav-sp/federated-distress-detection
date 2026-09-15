@@ -1,0 +1,23 @@
+{
+    "client_1": {
+        "samples": 400,
+        "distribution": {
+            "NORMAL": 188,
+            "DISTRESS": 212
+        }
+    },
+    "client_2": {
+        "samples": 400,
+        "distribution": {
+            "NORMAL": 204,
+            "DISTRESS": 196
+        }
+    },
+    "client_3": {
+        "samples": 399,
+        "distribution": {
+            "NORMAL": 208,
+            "DISTRESS": 191
+        }
+    }
+}
